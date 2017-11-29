@@ -18,9 +18,7 @@
 				NUMBER=2
 			else
 				FILE2=$NAME
-				NUMBER=1
-				# sdiff $FILE1 $FILE2 > $RESULT_PATH/$FILE1'(diff)'
-				# diff -y -a $FILE1 $FILE2 > $RESULT_PATH/$FILE1'(diff)'	 		
+				NUMBER=1	
 				diff -a --suppress-common-lines $FILE1 $FILE2 > $RESULT_PATH/$FILE1'(diff)'	 	
 			fi		 
 		done

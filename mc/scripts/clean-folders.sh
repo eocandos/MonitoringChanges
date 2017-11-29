@@ -7,6 +7,7 @@ rm -r exports/
 mkdir exports/
 cd exports/
 mkdir -p collections/SWD_DB/original/
+mkdir -p collections/SWD1-4/original/
 mkdir -p logs/original/
 mkdir -p results/
 mkdir -p final/
