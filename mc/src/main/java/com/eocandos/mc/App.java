@@ -19,7 +19,6 @@ public class App
 	//https://developer.chrome.com/extensions/webRequest
 	//https://toolbox.googleapps.com/apps/har_analyzer/
 	
-	
     /** 
      * 
      * Create general model - Diagram class ..
@@ -35,6 +34,8 @@ public class App
      * - Script clean folders 
      * - Organice code
      * - Git scripts
+     * - Set data from java to script { db, path, values, etc }
+     * - Use yml
      * 
      * - Get console output logs info { Headers, Response }
      * - 
@@ -45,20 +46,27 @@ public class App
 	
 	public static String target = null;
 	public static Runtime rt = Runtime.getRuntime();			
-	public static Process proc = null;	
-
-	public static String CLEANER_SCRIPT_PATH = "/home/eocandos/MonitorerChanges/mc/scripts/clean-folders.sh";
-	public static String DOWNLOADER_SCRIPT_PATH = "/home/eocandos/MonitorerChanges/mc/scripts/downloader-script.sh";
-	public static String DIFF_CALCULATOR_SCRIPT_PATH = "/home/eocandos/MonitorerChanges/mc/scripts/diff-script.sh";
-	public static String FINAL_RECORD_FILE = "/home/eocandos/MonitorerChanges/mc/exports/final/final-record.out";
-	public static String RESULT_FOLDER = "/home/eocandos/MonitorerChanges/mc/exports/results";
+	public static Process proc = null;		
+	
+	public static String DOWNLOADER_SCRIPT_PATH = "/home/eocandos/MonitoringChanges/mc/scripts/downloader-script.sh";
+	public static String DIFF_CALCULATOR_SCRIPT_PATH = "scripts/diff-script.sh";
+	public static String CLEANER_SCRIPT_PATH = "scripts/clean-folders.sh";
+	public static String FINAL_RECORD_FILE="exports/final/final-record.out";
+	public static String RESULT_FOLDER = "exports/temp";
+	
+	public static String TEST_SCRIPT_PATH = "scripts/testCommands2.sh";
 	
     public static void main( String[] args )
     {
+    	
+    	//runScript(TEST_SCRIPT_PATH, "StartingTest", "EndingTest");
+    	
+    	runScript(TEST_SCRIPT_PATH, "Start", "End");
+    	
         /**
          * Generating a file with all changes of last process executed
          * */	
-        getChangesOfProcess();
+        //getChangesOfProcess();
 		    	
     }
 
@@ -97,6 +105,7 @@ public class App
 			proc = rt.exec(target);
 			proc.waitFor();
 			System.out.println(mssEnd);
+			System.out.println("Runned the script: "+path);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -115,7 +124,7 @@ public class App
 			} else {
 				String nameFile = fileEntry.getName().substring(0, fileEntry.getName().length() - 11);
 				System.out.println("Changes on file: " + nameFile);
-				insertNewLine(FINAL_RECORD_FILE,
+				insertNewLineInFile(FINAL_RECORD_FILE,
 						"\n ========== " + nameFile + " ========== \n");
 				getFileContain(fileEntry.getPath());
 			}
@@ -131,7 +140,7 @@ public class App
 
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine() + "\n";
-				insertNewLine(FINAL_RECORD_FILE, line);
+				insertNewLineInFile(FINAL_RECORD_FILE, line);
 			}
 		} catch (FileNotFoundException e) {
 			e.getStackTrace();
@@ -139,7 +148,7 @@ public class App
 
 	}
     
-    private static void insertNewLine(String path, String line) {
+    private static void insertNewLineInFile(String path, String line) {
     	
     	try {
     	    Files.write(Paths.get(path), line.getBytes(), StandardOpenOption.APPEND);
