@@ -4,7 +4,7 @@
 #	=================================================  #
 #	=================== VARIABLES ===================  #
 
-NUMBER=1;
+NUMBER=2;
 NAME_DB='SWD_DB'
 LOGS_LINES_AMOUNT=25;
 LOGS_ORIGINAL_ECLIPSE_PATH=/home/eocandos/Develop/Certigestor/logs-eclipse/;
@@ -13,7 +13,7 @@ LOGS_ORIGINAL_ECLIPSE_PATH=/home/eocandos/Develop/Certigestor/logs-eclipse/;
 #	================ EXPORT FILES ===================  #
 
 # ======= Get json mongo collection ====== #
-cd ..
+
 TEMP_FOLDER=$PWD/exports/temp
 collections=`echo "show collections" | mongo $NAME_DB --quiet`
 

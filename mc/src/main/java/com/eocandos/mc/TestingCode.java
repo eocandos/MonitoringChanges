@@ -1,8 +1,12 @@
 package com.eocandos.mc;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 //import org.eclipse.jgit.diff.DiffFormatter;
 //import org.eclipse.jgit.diff.EditList;
@@ -12,40 +16,34 @@ import java.io.IOException;
 
 public class TestingCode {
 	
-	public static String PATH_LOG_TEMP = "/home/eocandos/MonitorerChanges/mc/exports/logs/diff/";
+	public static String PATH_LOG_TEMP = "file.log";
 	
 	public static void main(String[] args) {
 
-		
-		
-//		try (Stream<Path> paths = Files.walk(Paths.get(PATH_LOG_TEMP))) {
-//		    paths
-//		        .filter(Files::isRegularFile)
-//		        .forEach(System.out::println);
-//		    
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		} 
-		
-		
+		insertNewLineInFile(PATH_LOG_TEMP, "Dato 3");
+		System.out.println("Ok");
+
 	}
 	
-//	  public static void joinFiles()
-//	  {
-//	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-//	     
-//	    try
-//	    {
-//	      RawText rt1 = new RawText(new File("C:\\temp\\twofiles\\file1.txt"));
-//	      RawText rt2 = new RawText(new File("C:\\temp\\twofiles\\file2.txt"));
-//	      EditList diffList = new EditList();
-//	      diffList.addAll(new HistogramDiff().diff(RawTextComparator.DEFAULT, rt1, rt2));
-//	      new DiffFormatter(out).format(diffList, rt1, rt2);
-//	    } catch (IOException e)
-//	    {
-//	      e.printStackTrace();
-//	    }
-//	    System.out.println(out.toString());
-//	  }
+    
+    private static void insertNewLineInFile(String path, String line) {
+    	
+    	 Date myDate = new Date();
+    	 SimpleDateFormat mdyFormat = new SimpleDateFormat("MM-dd-yyyy");    	
+    	 String mdy = mdyFormat.format(myDate);
+    	
+    	try {
+    		File file = new File(path);
+    		if(file.createNewFile()) {
+    			 Files.write(Paths.get(path), mdy.getBytes(), StandardOpenOption.APPEND);
+    		}
+    	   
+    	}catch (IOException e) {
+    		e.getStackTrace();
+    	}
+    }
+    
+	
+
 
 }

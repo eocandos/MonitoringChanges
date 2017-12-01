@@ -8,9 +8,11 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
+
+import com.eocandos.mc.tools.IException;
 
 public class App 
 {	
@@ -48,32 +50,30 @@ public class App
 	public static Runtime rt = Runtime.getRuntime();			
 	public static Process proc = null;		
 	
-	public static String DOWNLOADER_SCRIPT_PATH = "/home/eocandos/MonitoringChanges/mc/scripts/downloader-script.sh";
-	public static String DIFF_CALCULATOR_SCRIPT_PATH = "scripts/diff-script.sh";
-	public static String CLEANER_SCRIPT_PATH = "scripts/clean-folders.sh";
-	public static String FINAL_RECORD_FILE="exports/final/final-record.out";
-	public static String RESULT_FOLDER = "exports/temp";
+	public static String FILE_NAME = null;
 	
-	public static String TEST_SCRIPT_PATH = "scripts/testCommands2.sh";
+	public static String DOWNLOADER_SCRIPT_PATH = "scripts/downloader-script.sh";
+	public static String DIFF_CALCULATOR_SCRIPT_PATH = "scripts/diff-script.sh";
+	public static String RESTART_ALL = "scripts/restart-all-script.sh";
+	public static String FINAL_RECORD_FILE_PATH="/home/eocandos/Dropbox/[CertiCamara]/Certisolucion/records-mc-tool/";
+	public static String DIFF_FOLDER = "exports/diff";
+	
+//	public static String TEST_SCRIPT_PATH = "scripts/testCommands2.sh";
 	
     public static void main( String[] args )
     {
     	
-    	//runScript(TEST_SCRIPT_PATH, "StartingTest", "EndingTest");
-    	
-    	runScript(TEST_SCRIPT_PATH, "Start", "End");
-    	
         /**
          * Generating a file with all changes of last process executed
          * */	
-        //getChangesOfProcess();
+        getChangesOfProcess();
 		    	
     }
 
 	public static void getChangesOfProcess() {
 	
-    	runScript(CLEANER_SCRIPT_PATH, "", "Cleaned Folders ::..");
-    	runScript(DOWNLOADER_SCRIPT_PATH, "..:: Starting record ..", "");
+		runScript(RESTART_ALL);
+    	runScript(DOWNLOADER_SCRIPT_PATH);
     	
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));			
 		System.out.print("[1] To save record - [Other] Discard \n");			 
@@ -84,10 +84,19 @@ public class App
 			response = reader.readLine();
 			if(response.equals("1")) {
 
-				runScript(DOWNLOADER_SCRIPT_PATH, "..:: Ending record ..", "Record finalized successfully! ::..");				
-				runScript(DIFF_CALCULATOR_SCRIPT_PATH, "..:: Getting changes ..", "Changes saved orrectly! ::..");
-		    	final File folder = new File(RESULT_FOLDER);
-		    	saveResults(folder);
+				runScript(DOWNLOADER_SCRIPT_PATH);				
+				runScript(DIFF_CALCULATOR_SCRIPT_PATH);
+				
+				// Create a new file
+//				FILE_NAME = getNewName();
+				Boolean createdEither = createNewFile(FINAL_RECORD_FILE_PATH, getNewName());
+				
+				// Save changes due to operation
+		    	final File folder = new File(DIFF_FOLDER);
+		    	saveDifferences(folder);
+
+		    	// Restart all
+		    	runScript(RESTART_ALL);
 		    	
 			}
 		} catch (IOException e) {
@@ -95,17 +104,15 @@ public class App
 		}
 	}
     
-    public static void runScript(String path, String mssStart, String mssEnd) {
+    public static void runScript(String pathScript) {
 
     	try {
 
-			System.out.println(mssStart);
-			target = new String(path);
+			target = new String(pathScript);
 			rt = Runtime.getRuntime();
 			proc = rt.exec(target);
 			proc.waitFor();
-			System.out.println(mssEnd);
-			System.out.println("Runned the script: "+path);
+			System.out.println("<Ok> Script: " + pathScript );
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -114,21 +121,68 @@ public class App
 		} 
     }
     
-	public static void saveResults(final File folder) {		
+	public static void saveDifferences(final File folderWithDiffs) {		
 		
-		for (final File fileEntry : folder.listFiles()) {
+		for (final File fileEntry : folderWithDiffs.listFiles()) {
 			if (fileEntry.isDirectory()) {
 
-				saveResults(fileEntry);
+				saveDifferences(fileEntry);
 
 			} else {
+				
 				String nameFile = fileEntry.getName().substring(0, fileEntry.getName().length() - 11);
+				
 				System.out.println("Changes on file: " + nameFile);
-				insertNewLineInFile(FINAL_RECORD_FILE,
-						"\n ========== " + nameFile + " ========== \n");
+				
+				insertNewLineInFile(FINAL_RECORD_FILE_PATH, "========== " + nameFile +" ==========");
+				
 				getFileContain(fileEntry.getPath());
 			}
 		}
+	}
+	
+	public static Boolean createNewFile(String path, String name) {
+		
+		Boolean response = null;
+		String filePath = path + name;
+		
+		try {
+			
+			File file = new File(filePath);
+			file.createNewFile();
+			response = true;
+			
+		} catch (IOException e) {
+			response = false;
+			e.printStackTrace();
+		}
+		
+		return response;
+		
+	}
+	
+	public static String getNewName() {
+		
+		FILE_NAME = "Record-" + getActualDate() + ".js";
+		return FILE_NAME;
+		
+	}
+	
+	public static String getActualDate() {
+			
+		String date = null;
+		try {
+			
+		   	 Date myDate = new Date();
+		   	 SimpleDateFormat mdyFormat = new SimpleDateFormat("MM-dd-yyyy_HH-mm-ss");    	
+		   	 date = mdyFormat.format(myDate);	  
+		   	 
+		} catch (Exception e) {
+			System.out.println(e.getStackTrace());
+		}
+		
+		return date;
+		
 	}
     
 	private static void getFileContain(String path) {
@@ -139,8 +193,8 @@ public class App
 			Scanner scanner = new Scanner(file);
 
 			while (scanner.hasNextLine()) {
-				String line = scanner.nextLine() + "\n";
-				insertNewLineInFile(FINAL_RECORD_FILE, line);
+				String line = ( "\n" + scanner.nextLine() );
+				insertNewLineInFile(FINAL_RECORD_FILE_PATH, line);
 			}
 		} catch (FileNotFoundException e) {
 			e.getStackTrace();
@@ -151,11 +205,14 @@ public class App
     private static void insertNewLineInFile(String path, String line) {
     	
     	try {
-    	    Files.write(Paths.get(path), line.getBytes(), StandardOpenOption.APPEND);
+    		String pathSummaryFile = path +  FILE_NAME;
+    	    Files.write(Paths.get(pathSummaryFile), line.getBytes(), StandardOpenOption.APPEND);
     	}catch (IOException e) {
     		e.getStackTrace();
     	}
     }
+    
+    
 }
 
 

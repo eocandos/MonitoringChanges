@@ -1,0 +1,6 @@
+mongoDBConfig:
+
+  dbName: SWD_DB
+  dbUser: swd_db
+  dbPassword: swd_db
+  dbAddress: localhost
