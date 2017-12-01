@@ -4,7 +4,7 @@
 #	=================================================  #
 #	=================== VARIABLES ===================  #
 
-NUMBER=2;
+NUMBER=1;
 NAME_DB='SWD_DB'
 LOGS_LINES_AMOUNT=25;
 LOGS_ORIGINAL_ECLIPSE_PATH=/home/eocandos/Develop/Certigestor/logs-eclipse/;
@@ -28,7 +28,6 @@ echo "== [Ok] Copied Collections! ==";
 
 # ============= Get console logs ============= #
 cd $LOGS_ORIGINAL_ECLIPSE_PATH
-
 for fileName in $LOGS_ORIGINAL_ECLIPSE_PATH*; do
 	NAME=${fileName##*/}
 	echo $NAME
