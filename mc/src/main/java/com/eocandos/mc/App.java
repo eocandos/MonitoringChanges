@@ -10,9 +10,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
-
-import com.eocandos.mc.tools.IException;
 
 public class App {
 	// http://blog.eviltester.com/2010/05/a-selenium-capturenetworktraffic-example-in-java.html
@@ -22,24 +22,19 @@ public class App {
 
 	/**
 	 * 
-	 * Create general model - Diagram class ..
+	 * 1.** Create general model - Diagram class ..
 	 * 
-	 * 1. (Console) - Create general system of to run the scripts and export and
-	 * create of dbs and logs files - Run script / bash (ok) - Create two
-	 * versions of the files { . Logs . jsons } (ok) - Join all on a only file
-	 * (Java) (ok) - Debbug and depurate all (Ok) - Better diff command ( Commit
-	 * Git ) - Organice code - Git scripts - Set data from java to script { db,
-	 * path, values, etc } - Use yml
-	 * 
-	 * - Get console output logs info { Headers, Response } -
+	 * - Export HAR file { Headers, Response } -
+	 * - Better diff command ( Commit
+	 * - Use yml
 	 * 
 	 * 2. (Back) - Business + Persistence { Some methods, save: name, desc, path
 	 * .. on oracle db }
 	 **/
 	
-	/////////////////////////////////////
-	////  		VARIABLES 			 ////
-	/////////////////////////////////////
+	////////////////////////
+	// Attributes
+	////////////////////////
 
 	public static String target = null;
 	public static Runtime rt = Runtime.getRuntime();
@@ -47,16 +42,18 @@ public class App {
 
 	// Variables
 	public static String FILE_NAME = null;
-	public static String FORMAT_DATE = "MM-dd-yyyy_HH-mm-ss";
+	public static final String FORMAT_DATE = "MM-dd-yyyy_HH-mm-ss";
+	public static final String ACTUAL_DATE = getActualDate();
+	public static HashMap<String, String> headerMap = new HashMap<String, String>();
 
 	// Scripts
-	public static String DOWNLOADER_SCRIPT = "scripts/downloader-script.sh";
-	public static String DIFF_CALCULATOR_SCRIPT = "scripts/diff-script.sh";
-	public static String RESTART_ALL_SCRIPT = "scripts/restart-all-script.sh";
+	public static final String DOWNLOADER_SCRIPT = "scripts/downloader-script.sh";
+	public static final String DIFF_CALCULATOR_SCRIPT = "scripts/diff-script.sh";
+	public static final String RESTART_ALL_SCRIPT = "scripts/restart-all-script.sh";
 
 	// Folders
-	public static String FINAL_RECORD_FOLDER = "exports/final";
-	public static String DIFF_FOLDER = "exports/diff";
+	public static final String FINAL_RECORD_FOLDER = "exports/final";
+	public static final String DIFF_FOLDER = "exports/diff";
 
 	public static void main(String[] args) {
 
@@ -64,12 +61,16 @@ public class App {
 		 * Generating a file with all changes of last process executed
 		 */
 		getChangesOfProcess();
+		
+		/**
+		 * Create Persistence layer and insert all in a table ( Psqul - Oracle)
+		 **/
 
 	}
 
-	/////////////////////////////////////
-	//// PUBLIC METHODS ////
-	/////////////////////////////////////
+	/////////////////////////////
+	//// PUBLIC METHODS
+	/////////////////////////////
 
 	public static void getChangesOfProcess() {
 
@@ -77,7 +78,7 @@ public class App {
 		runScript(DOWNLOADER_SCRIPT);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		System.out.print("[1] To save record - [Other] Discard \n");
+		System.out.print("[1] To save record - [Other] Discard: ");
 		String response;
 
 		try {
@@ -94,8 +95,12 @@ public class App {
 				// Create a new file
 				Boolean createdEither = createNewFile(FINAL_RECORD_FOLDER, getNewName());
 
+				// Get description and extras data
+				getInfoHeader();
+				
 				// Save changes due to operation
 				final File folder = new File(DIFF_FOLDER);
+				insertHeaderOnFile();
 				saveDifferences(folder);
 
 				// Restart all
@@ -166,7 +171,7 @@ public class App {
 
 	public static String getNewName() {
 
-		FILE_NAME = "Record-" + getActualDate() + ".js";
+		FILE_NAME = "Record-" + ACTUAL_DATE + ".js";
 		return FILE_NAME;
 
 	}
@@ -178,19 +183,17 @@ public class App {
 
 			Date myDate = new Date();
 			SimpleDateFormat mdyFormat = new SimpleDateFormat(FORMAT_DATE);
-			date = mdyFormat.format(myDate);
+			date = mdyFormat.format(myDate);;
 
 		} catch (Exception e) {
 			System.out.println(e.getStackTrace());
 		}
-
 		return date;
-
 	}
 
-	/////////////////////////////////////
-	//// PRIVATE METHODS ////
-	/////////////////////////////////////
+	/////////////////////////////////
+	//// PRIVATE METHODS
+	/////////////////////////////////
 
 	private static void getFileContain(String path) {
 
@@ -212,14 +215,47 @@ public class App {
 	private static void insertNewLineInFile(String path, String line) {
 
 		try {
+			
 			String pathSummaryFile = path + "/" + FILE_NAME;
 			Files.write(Paths.get(pathSummaryFile), line.getBytes(), StandardOpenOption.APPEND);
+			
 		} catch (IOException e) {
 			e.getStackTrace();
 		}
 	}
+	
+	private static void getInfoHeader() {
+				
+		BufferedReader reader = null;		
+		
+		try {
+			
+			headerMap.put("creationDate","DATE: "+ ACTUAL_DATE);		
+			
+			reader = new BufferedReader(new InputStreamReader(System.in));
+			System.out.print("Process Name:  ");			
+			headerMap.put("processName", "PROCESS NAME: " + reader.readLine());
+			
+			reader = new BufferedReader(new InputStreamReader(System.in));
+			System.out.print("Description:  ");			
+			headerMap.put("description", "DESCRIPTION: " + reader.readLine());
+			
+			headerMap.put("separator", "______________________________________________________________________________");
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void insertHeaderOnFile() {
+		
+			for (Map.Entry<String, String> data : headerMap.entrySet()) {
+				
+				insertNewLineInFile(FINAL_RECORD_FOLDER, "\n" + data.getValue());
+				
+			}
+
+	}
 }
 
-/**
- * Create Persistence layer and insert all in a table ( Psqul - Oracle)
- **/
+
