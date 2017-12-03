@@ -14,7 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import com.eocandos.mc.tools.Variables;
+
 public class App {
+
 	// http://blog.eviltester.com/2010/05/a-selenium-capturenetworktraffic-example-in-java.html
 	// https://stackoverflow.com/questions/13537533/automatize-har-files-generation-from-google-chrome
 	// https://developer.chrome.com/extensions/webRequest
@@ -24,16 +27,17 @@ public class App {
 	 * 
 	 * 1.** Create general model - Diagram class ..
 	 * 
-	 * - Export HAR file { Headers, Response } -
+	 * - Export HAR file { Headers, Response }
 	 * - Better diff command ( Commit
+	 * - That run jar -jar
 	 * - Use yml
 	 * 
 	 * 2. (Back) - Business + Persistence { Some methods, save: name, desc, path
 	 * .. on oracle db }
 	 **/
-	
+
 	////////////////////////
-	// Attributes
+	//// ATRIBUTES
 	////////////////////////
 
 	public static String target = null;
@@ -42,18 +46,9 @@ public class App {
 
 	// Variables
 	public static String FILE_NAME = null;
-	public static final String FORMAT_DATE = "MM-dd-yyyy_HH-mm-ss";
+	// public static final String FORMAT_DATE = "MM-dd-yyyy_HH-mm-ss";
 	public static final String ACTUAL_DATE = getActualDate();
-	public static HashMap<String, String> headerMap = new HashMap<String, String>();
-
-	// Scripts
-	public static final String DOWNLOADER_SCRIPT = "scripts/downloader-script.sh";
-	public static final String DIFF_CALCULATOR_SCRIPT = "scripts/diff-script.sh";
-	public static final String RESTART_ALL_SCRIPT = "scripts/restart-all-script.sh";
-
-	// Folders
-	public static final String FINAL_RECORD_FOLDER = "exports/final";
-	public static final String DIFF_FOLDER = "exports/diff";
+	public static HashMap<String, String> recordInfoMap = new HashMap<String, String>();
 
 	public static void main(String[] args) {
 
@@ -61,7 +56,7 @@ public class App {
 		 * Generating a file with all changes of last process executed
 		 */
 		getChangesOfProcess();
-		
+
 		/**
 		 * Create Persistence layer and insert all in a table ( Psqul - Oracle)
 		 **/
@@ -74,11 +69,11 @@ public class App {
 
 	public static void getChangesOfProcess() {
 
-		runScript(RESTART_ALL_SCRIPT);
-		runScript(DOWNLOADER_SCRIPT);
+		runScript(Variables.RESTART_ALL_SCRIPT);
+		runScript(Variables.DOWNLOADER_SCRIPT);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		System.out.print("[1] To save record - [Other] Discard: ");
+		System.out.print(Variables.INITIAL_MESSAGE);
 		String response;
 
 		try {
@@ -87,24 +82,25 @@ public class App {
 			if (response.equals("1")) {
 
 				// Export and generate files
-				runScript(DOWNLOADER_SCRIPT);
+				runScript(Variables.DOWNLOADER_SCRIPT);
 
 				// Get differences on the saved files
-				runScript(DIFF_CALCULATOR_SCRIPT);
-
-				// Create a new file
-				Boolean createdEither = createNewFile(FINAL_RECORD_FOLDER, getNewName());
+				runScript(Variables.DIFF_CALCULATOR_SCRIPT);
 
 				// Get description and extras data
-				getInfoHeader();
-				
+				getExtraInfo();
+
+				// Create a new file
+				Boolean createdEither = createNewFile(Variables.FINAL_RECORD_FOLDER, getNewName());
+
 				// Save changes due to operation
-				final File folder = new File(DIFF_FOLDER);
+				final File folder = new File(Variables.DIFF_FOLDER);
 				insertHeaderOnFile();
 				saveDifferences(folder);
 
 				// Restart all
-				runScript(RESTART_ALL_SCRIPT);
+				runScript(Variables.RESTART_ALL_SCRIPT);
+				System.out.println(Variables.FINALL_MESSAGE);
 
 			}
 		} catch (IOException e) {
@@ -120,7 +116,7 @@ public class App {
 			rt = Runtime.getRuntime();
 			proc = rt.exec(target);
 			proc.waitFor();
-			System.out.println("<Ok> Script: " + pathScript);
+			System.out.println("... " + pathScript + " " + Variables.OK_MESSAGE);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -140,9 +136,9 @@ public class App {
 
 				String nameFile = fileEntry.getName().substring(0, fileEntry.getName().length() - 11);
 
-				System.out.println("Changes on file: " + nameFile);
+				System.out.println(Variables.CHANGES_ON_FILE + nameFile);
 
-				insertNewLineInFile(FINAL_RECORD_FOLDER, "\n \n========== " + nameFile + " ==========");
+				insertNewLineInFile(Variables.FINAL_RECORD_FOLDER, "\n \n========== " + nameFile + " ==========");
 
 				getFileContain(fileEntry.getPath());
 			}
@@ -166,12 +162,14 @@ public class App {
 		}
 
 		return response;
-
 	}
 
 	public static String getNewName() {
 
-		FILE_NAME = "Record-" + ACTUAL_DATE + ".js";
+		String name = recordInfoMap.get(Variables.PROCESS_NAME_INDEX).split(":")[1].replaceAll("\\s", "-");
+		String date = ACTUAL_DATE.replace("-", "").substring(0, 13);
+
+		FILE_NAME = name + "_" + date + ".js";
 		return FILE_NAME;
 
 	}
@@ -182,8 +180,9 @@ public class App {
 		try {
 
 			Date myDate = new Date();
-			SimpleDateFormat mdyFormat = new SimpleDateFormat(FORMAT_DATE);
-			date = mdyFormat.format(myDate);;
+			SimpleDateFormat mdyFormat = new SimpleDateFormat(Variables.FORMAT_DATE);
+			date = mdyFormat.format(myDate);
+			;
 
 		} catch (Exception e) {
 			System.out.println(e.getStackTrace());
@@ -204,7 +203,7 @@ public class App {
 
 			while (scanner.hasNextLine()) {
 				String line = ("\n" + scanner.nextLine());
-				insertNewLineInFile(FINAL_RECORD_FOLDER, line);
+				insertNewLineInFile(Variables.FINAL_RECORD_FOLDER, line);
 			}
 		} catch (FileNotFoundException e) {
 			e.getStackTrace();
@@ -215,47 +214,45 @@ public class App {
 	private static void insertNewLineInFile(String path, String line) {
 
 		try {
-			
+
 			String pathSummaryFile = path + "/" + FILE_NAME;
 			Files.write(Paths.get(pathSummaryFile), line.getBytes(), StandardOpenOption.APPEND);
-			
+
 		} catch (IOException e) {
 			e.getStackTrace();
 		}
 	}
-	
-	private static void getInfoHeader() {
-				
-		BufferedReader reader = null;		
-		
+
+	private static void getExtraInfo() {
+
+		BufferedReader reader = null;
+
 		try {
-			
-			headerMap.put("creationDate","DATE: "+ ACTUAL_DATE);		
-			
+
+			recordInfoMap.put(Variables.CREATION_DATE_INDEX, Variables.CREATION_DATE_VALUE + ACTUAL_DATE);
+
 			reader = new BufferedReader(new InputStreamReader(System.in));
-			System.out.print("Process Name:  ");			
-			headerMap.put("processName", "PROCESS NAME: " + reader.readLine());
-			
+			System.out.print(Variables.PROCESS_NAME_MESSAGE);
+			recordInfoMap.put(Variables.PROCESS_NAME_INDEX, Variables.PROCESS_NAME_VALUE + reader.readLine());
+
 			reader = new BufferedReader(new InputStreamReader(System.in));
-			System.out.print("Description:  ");			
-			headerMap.put("description", "DESCRIPTION: " + reader.readLine());
-			
-			headerMap.put("separator", "______________________________________________________________________________");
-			
+			System.out.print(Variables.DESCRIPTION_MESSAGE);
+			recordInfoMap.put(Variables.DESCRIPTION_INDEX, Variables.DESCRIPTION_VALUE + reader.readLine());
+
+			recordInfoMap.put(Variables.SEPARATOR_INDEX, Variables.SEPARATOR_VALUE);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void insertHeaderOnFile() {
-		
-			for (Map.Entry<String, String> data : headerMap.entrySet()) {
-				
-				insertNewLineInFile(FINAL_RECORD_FOLDER, "\n" + data.getValue());
-				
-			}
+
+		for (Map.Entry<String, String> data : recordInfoMap.entrySet()) {
+
+			insertNewLineInFile(Variables.FINAL_RECORD_FOLDER, "\n" + data.getValue());
+
+		}
 
 	}
 }
-
-
